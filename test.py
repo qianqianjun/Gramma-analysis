@@ -1,12 +1,60 @@
-N=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
-Lable=[False for i in range(26)]
+"""
+write by 高谦  未完成
+
+底下注释非常详细，因为我健忘，怕给老师讲的时候自己忘了当初自己咋想的了
+"""
+
+
 class label(object):
-    def __init__(self,val,type,right):
-        self.value=val
-        self.terminal=type
-        self.right=right
-    def op(self):
-        return self.value[0]
+    def __init__(self, val, right):
+        # 指示当前边的值
+        self.value = val
+        # 指向下一个状态：转移后的状态。
+        self.right = right
+
+
+class Item(object):
+    def __init__(self, val, sets):
+        # 指示当前点的位置：
+        self.index = 0
+        # 指示状态中的产生式中的左边的非终结符。
+        self.left = val
+        # list[str] 一个字符串的列表：
+        self.right = sets
+        self.maxindex = len(self.right)
+
+    # 修改当前点的位置的函数，新建状态的时候会用到：
+    def setIndex(self, ind):
+        self.index = ind
+
+
+class Status(object):
+    id = 0
+
+    def __init__(self):
+        # line
+        self.line = []
+        # Item
+        self.productionSet = []
+        self.static_id = Status.id
+        Status.id += 1
+
+    def addline(self, singleline):
+        self.line.append(singleline)
+
+    def addProduction(self, production):
+        self.productionSet.append(production)
+
+    def setStatusid(self, ids):
+        self.static_id = ids
+
+
+class Line(object):
+    def __init__(self, tranval, next):
+        self.next = next
+        self.tranval = tranval
+
+
 def isTerminal(k):
     if (k[0] >= 'a' and k[0] <= 'z') or \
             (k[0] >= '0' and k[0] <= '9') or \
@@ -19,182 +67,129 @@ def isTerminal(k):
             k[0] == '/':
         return True
     return False
+
+
+def printGramma(gramma):
+    for i in gramma:
+        print((i.value, i.right))
+    print("-------------------------------")
+
+
 def cin():
-    print("请输入文法，例如：A->a|Ab,输入exit结束输入:")
-    gramma=[]
+    print("请输入文法，例如：A->a|A b,输入exit结束输入(注意,不同的符号之间要有空格:")
+    gramma = []
     while True:
-        r=input()
-        if r!='exit':
-            r=r.split("->")
-            temp=label(r[0],False,r[1].split("|"))
+        r = input()
+        if r != 'exit':
+            r = r.split("->")
+            right = []
+            for i in r[1].split("|"):
+                right.append(i.split())
+            temp = label(r[0], right)
             gramma.append(temp)
         else:
             break
+    start = gramma[0].value
+    temp = label(start + "*", [[start]])
+    gramma.insert(0, temp)
     print("解析输入文法：")
     printGramma(gramma)
-    return gramma
-def printGramma(gramma):
-    for i in gramma:
-        print((i.value,i.right))
-    print("-------------------------------")
-def RemoveLeftRecursion(gramma):
-    print("消除左递归：")
-    i=0
-    length=len(gramma)
-    while i <length:
-        j=0
-        while j<i:
-            tempright=[]
-            for k in gramma[i].right:
-                if k[0]==gramma[j].value:
-                    for m in gramma[j].right:
-                        tempright.append(m+k[1:len(k)])
-                else:
-                    tempright.append(k)
-            gramma[i].right=tempright
-            j+=1
-        a=[]
-        b=[]
-        for k in gramma[i].right:
-            #不构成左递归:
-            if k[0]!=gramma[i].value:
-                b.append(k)
-            else:
-                a.append(k)
+    return (gramma, start)
 
-        if len(a)==0:
-            pass
-        #如果存在左递归:
-        else:
-            newright=[]
-            for k in b:
-                newright.append(k+gramma[i].value+'~')
-            gramma[i].right=newright
-            newelemright=[]
-            for k in a:
-                newelemright.append(k[1:len(k)]+gramma[i].value+'~')
-            newelemright.append("ε")
-            newgramma=label(gramma[i].value+'~',False,newelemright)
-            gramma.append(newgramma)
-        i+=1
-    gramma.sort(key=label.op)
-    printGramma(gramma)
-    return gramma
-def removeLeftFactor(gramma):
-    cnt=0
-    length=len(gramma)
-    for i in gramma:
-        if cnt>=length:
-            break
-        maxlength=len(i.right[0])
-        j=0
-        while j<=maxlength:
-            flag=True
-            for k in i.right:
-                if i.right[0][0:j]!=k[0:j]:
-                    flag=False
-                    if i.right[0][0:j]=="~" or i.right[0][0:j]=="^" or k[0:j]=="~" or k[0:j]=="^":
-                        j-=1
-                    break
-            if flag:
-                j+=1
-            else:
-                break
-        maxsubstr=i.right[0][0:j-1]
-        if len(maxsubstr)==0:
-            continue
-        newelemright=[]
-        for k in i.right:
-            if len(k[j-1:len(k)])==0:
-                newelemright.append("ε")
-            else:
-                newelemright.append(k[j-1:len(k)])
-        newgramma=label(i.value+'^',False,newelemright)
-        gramma.append(newgramma)
-        i.right=[maxsubstr+maxsubstr+i.value+'^']
-        cnt+=1
-    print("提取左因子：")
-    gramma.sort(key=label.op)
-    printGramma(gramma)
-    newgramma={}
-    for i in gramma:
-        newgramma[i.value]=i.right
-    return (newgramma,gramma)
-#获取终结符和非终结符号：
+
 def getSet(gramma):
-    Tset=[]
-    Nset=[]
+    Tset = []
+    Nset = []
     for i in gramma:
         Nset.append(i.value)
         for j in i.right:
             for k in j:
                 if isTerminal(k):
                     Tset.append(k)
-    Tset=set(Tset)
-    Tset=list(Tset)
+    Tset = set(Tset)
+    Tset = list(Tset)
     Tset.sort()
-    return (Tset,Nset)
-def Except(arr,elem):
-    res=[]
-    contain=False
-    for i in arr:
-        if i!=elem:
-            res.append(i)
-        else:
-            contain=True
-    return (res,contain)
-def add(arr,lists):
-    change=False
-    for i in lists:
-        if i not in arr:
-            arr.append(i)
-            change=True
-    return arr,change
-def getFirst(tset,nset,newgramma):
-    First={}
-    for i in tset:
-        First[i]=[i]
-    for i in newgramma:
-        First[i]=[]
-    loop=True
-    while True:
-        if not loop:
-            break
-        loop = False
-        for Nlabel in newgramma:
-            for production in newgramma[Nlabel]:
-                print(production)
-                Continue=True
-                n=len(production)
-                labelindex=0
-                while Continue and labelindex<n:
-                    if len(First[production[labelindex]])==0:
-                        Continue=False
-                    else:
-                        res,Continue=Except(First[production[labelindex]],"ε")
-                        First[Nlabel],ischange=add(First[Nlabel],res)
-                        if ischange:
-                            loop=True
-                if Continue:
-                    First[Nlabel],ischange=add(First[Nlabel],["ε"])
-    return First
-def getFollow():
-    pass
+    return (Tset, Nset)
+
+
+def getProductionSet(gramma):
+    productionset = {}
+    i = 0
+    # 构造productionSet 集合：
+    for row in gramma:
+        for production in row.right:
+            productionset[i] = [row.value, production]
+            i += 1
+    return productionset
+
+
+def PrintProductionSet(productionset):
+    print("产生式编号如下所示：")
+    for i in productionset:
+        print("{:2d}".format(int(i)) + " : ", end="")
+        print(productionset[i][0] + " -> ", end="")
+        res = ""
+        for elem in productionset[i][1]:
+            res += elem + " "
+        print(res)
+
+
+def checkRepeat(status, netstatus, gramma, nset):
+    for i in status.productionSet:  # 遍历所有的item：
+        # 如果真的是一个非终结符号：
+        if i.right[i.index] in nset:
+            # 添加这个非终结符号的所有的产生式到这个状态的productionSet中：
+            for row in gramma:
+                if row.value == i.right[i.index]:
+                    status.productionSet.append(Item(row.value, row.right))
+    return True
+
+
+def Closure(status, nset, tset, gramma):
+    # 首先判断是不是中指状态：status 的production中只有一个产生式，并且产生式的点在最右端
+    # 是终止状态直接返回
+    if len(status.productionSet) == 1 and status.productionSet[0].index == status.productionSet[0].maxindex:
+        return
+    # 如果不是终止状态：遍历productionSet
+    # 查看哪一个产生式的右端的点后面是一个非终结符号，将这个非终结符号的所有产生式添加到这个集合的产生式
+    # index是当前点所处的位置。
+    for i in status.productionSet:  # 遍历所有的item：
+        # 如果真的是一个非终结符号：
+        if i.right[i.index] in nset:
+            # 添加这个非终结符号的所有的产生式到这个状态的productionSet中：
+            for row in gramma:
+                if row.value == i.right[i.index]:
+                    status.productionSet.append(Item(row.value, row.right))
+    for i in status.productionSet:
+        print((i.left, i.right, i.index))
+    # 遍历当前状态productionSet中的所有item
+    # 根据点的位置创造出下一个状态
+    # 用一条边将当前状态和下一个状态连接在一起（边的next指向下一个状态，边的值就是当前index所指的符号的值）
+    # 将边添加到当前状态的出边集合中
+    # 这里特别需要注意的是判断一下新的状态是不是可能就是当前状态，是的话就别创建了，如果不行stackoverflow的话
+    for i in status.productionSet:  # 遍历所有的item
+        pass
+
+
+def getDFA(productionset, tset, nset, gramma):
+    start = Status()
+    start.productionSet.append(Item(productionset[0][0], productionset[0][1]))
+    Closure(start, nset, tset, gramma)
+
+
 def main():
-    gramma=cin()
-    #消除左递归：
-    gramma=RemoveLeftRecursion(gramma)
-    #提取左因子：
-    newgramma,gramma=removeLeftFactor(gramma)
-    #获取终结符和非终结符号的集合：
-    Tset,Nset=getSet(gramma)
-    #获取First集合：
-    First=getFirst(Tset,Nset,newgramma)
-    # for i in First:
-    #     print((i,First[i]))
-if __name__=='__main__':
+    gramma, start = cin()
+    productionSet = getProductionSet(gramma)
+    PrintProductionSet(productionSet)
+    tset, nset = getSet(gramma)
+    getDFA(productionSet, tset, nset, gramma)
+
+
+if __name__ == '__main__':
     main()
 
-# A->B a|A a|c
-# B->B b|A b|d
+# S->a A|b B
+# A->c A|d
+# B->c B|d
 # exit
+

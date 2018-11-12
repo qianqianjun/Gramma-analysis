@@ -1,3 +1,6 @@
+"""
+write by 高谦  已完成
+"""
 class label(object):
     def __init__(self,val,right):
         self.value=val
