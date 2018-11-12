@@ -1,5 +1,5 @@
 """
-write by 高谦  未完成
+write by 高谦  已经完成
 
 底下注释非常详细，因为我健忘，怕给老师讲的时候自己忘了当初自己咋想的了
 """
@@ -207,13 +207,62 @@ def getDFA(productionset,tset,nset,gramma):
         for k in i.line:
             print((k.tranval,k.next.static_id))
         print("---------------------------")
+    return (resultSet,start)
+def PrintTable(table):
+    print("分析表如下：")
+    width=10
+    print(("-"*width+"+")*len(table[0]))
+    for i in table:
+        for j in i:
+            print("{:^10s}|".format(str(j)),end="")
+        print()
+        print(("-"*width+"+")*len(table[0]))
+def getTable(resultSet,tset,nset,productionSet):
+    head=["status"]
+    for i in tset:
+        head.append(i)
+    head.append("$")
+    for i in nset[1:]:
+        head.append(i)
+    table=[]
+    table.append(head)
+    for i in resultSet:
+        newrow=[i.static_id]
+        for j in head[1:]:
+            newrow.append("")
+        table.append(newrow)
+    i=0
+    length=len(resultSet)
+    while i<length:
+        currentstatus=resultSet[i]
+        Set=currentstatus.productionSet
+        firstPro=currentstatus.productionSet[0]
+        if len(Set) !=1 and firstPro.index !=firstPro.maxindex:
+            for j in currentstatus.line:
+                val=j.tranval
+                nextid=j.next.static_id
+                index=head.index(val)
+                table[i+1][index]="s"+str(nextid)
+        else:
+            for r in productionSet:
+                if productionSet[r][0]==firstPro.left and productionSet[r][1]==firstPro.right:
+                    if r==0:
+                        table[i+1][len(tset)+1]="ACC"
+                    else:
+                        col=1
+                        while col <=len(tset):
+                            table[i+1][col]="r"+str(r)
+                            col+=1
+                        break
+        i+=1
+    PrintTable(table)
 def main():
     gramma,start=cin()
     productionSet=getProductionSet(gramma)
-    PrintProductionSet(productionSet)
     tset,nset=getSet(gramma)
-    getDFA(productionSet,tset,nset,gramma)
-
+    resultSet, start =getDFA(productionSet,tset,nset,gramma)
+    PrintProductionSet(productionSet)
+    getTable(resultSet,tset,nset,productionSet)
 if __name__ == '__main__':
     main()
 
