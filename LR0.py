@@ -272,3 +272,9 @@ if __name__ == '__main__':
 # B->c B|d
 # exit
 
+
+# S->A|B
+# A->a A b|c
+# B->a B d|d
+# exit
+

@@ -1,6 +1,7 @@
 """
 write by 高谦  已完成
 """
+from container import *
 class label(object):
     def __init__(self,val,right):
         self.value=val
@@ -311,6 +312,86 @@ def getTable(follow,first,gramma,nset,tset):
                         break
                     content+=1
     return (table,productionSet)
+def ParsingResult(table,start,productionSet,tset,nset):
+    while True:
+        cin=input("请输入要匹配的字符串，输入exit结束输入,注意不同的输入要有空格\n")
+        if cin=='exit':
+            break
+        parStack = stack()
+        parStack.push("$")
+        cin=cin.split()
+        inputQue=queue()
+        for i in cin:
+            inputQue.push(i)
+        inputQue.push("$")
+        parStack.push(start)
+        accept=True
+        while parStack.peek()!="$":
+            inputstring=inputQue.front()
+            top=parStack.peek()
+            if top in nset:
+                column=table[0].index(inputstring)
+                row=0
+                i=0
+                while i<len(table):
+                    if table[i][0]==top:
+                        row=i
+                        break
+                    i+=1
+                target=int(table[row][column])
+                print("分析栈",end=":")
+                for i in parStack.datalist:
+                    print(i,end=" ")
+                print()
+                print("输入队列",end=":")
+                for i in inputQue.datalist:
+                    print(i,end=" ")
+                print()
+                print("动作:",end="")
+                print(productionSet[target][0],end="->")
+                for i in productionSet[target][1]:
+                    print(i,end=" ")
+                print()
+                print("-------------------------------")
+                arr = productionSet[target][1]
+                parStack.pop()
+                for i in reversed(arr):
+                    parStack.push(i)
+            else:
+                if inputstring!=top and top!="ε":
+                    print("错误，不匹配！")
+                    accept=False
+                    break
+                else:
+                    print("分析栈", end=":")
+                    for i in parStack.datalist:
+                        print(i, end=" ")
+                    print()
+                    print("输入队列", end=":")
+                    for i in inputQue.datalist:
+                        print(i, end=" ")
+                    print()
+                    print("动作: 匹配")
+                    if top=="ε":
+                        parStack.pop()
+                        continue
+                    parStack.pop()
+                    inputQue.pop()
+                print("-------------------------------")
+        if accept:
+            print("-------------------------------")
+            print("分析栈", end=":")
+            for i in parStack.datalist:
+                print(i, end=" ")
+            print()
+            print("输入队列", end=":")
+            for i in inputQue.datalist:
+                print(i, end=" ")
+            print()
+            print("动作: 接受")
+            print("-------------------------------")
+        else:
+            print("*****不能接受********")
 def main():
     gramma,start=cin()
     gramma=RemoveLeftRecursion(gramma)
@@ -321,6 +402,7 @@ def main():
     table,productionSet=getTable(Follow,First,gramma,Nset,Tset)
     PrintProductionSet(productionSet)
     PrintTable(table)
+    ParsingResult(table,start,productionSet,Tset,Nset)
 if __name__ == '__main__':
     main()
 
@@ -340,4 +422,7 @@ if __name__ == '__main__':
 # Term->Term Mulop Factor|Factor
 # Mulop->*
 # Factor->( Expr )|number
+# exit
+
+# S->( S ) S|ε
 # exit
