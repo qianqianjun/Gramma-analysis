@@ -2,24 +2,8 @@
 write by 高谦  已完成
 """
 from container import *
-class label(object):
-    def __init__(self,val,right):
-        self.value=val
-        self.right=right
-    def op(self):
-        return self.value[0]
-def isTerminal(k):
-    if (k[0] >= 'a' and k[0] <= 'z') or \
-            (k[0] >= '0' and k[0] <= '9') or \
-            k[0] == 'ε' or \
-            k[0] == '(' or \
-            k[0] == ')' or \
-            k[0] == '+' or \
-            k[0] == '-' or \
-            k[0] == '*' or \
-            k[0] == '/':
-        return True
-    return False
+from public import *
+from struct import *
 def cin():
     print("请输入文法，例如：A->a|A b,输入exit结束输入(注意,不同的符号之间要有空格:")
     gramma=[]
@@ -372,6 +356,7 @@ def ParsingResult(table,start,productionSet,tset,nset):
                         print(i, end=" ")
                     print()
                     print("动作: 匹配")
+                    print("-------------------------------")
                     if top=="ε":
                         parStack.pop()
                         continue
@@ -379,7 +364,6 @@ def ParsingResult(table,start,productionSet,tset,nset):
                     inputQue.pop()
                 print("-------------------------------")
         if accept:
-            print("-------------------------------")
             print("分析栈", end=":")
             for i in parStack.datalist:
                 print(i, end=" ")

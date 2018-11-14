@@ -3,57 +3,9 @@ write by 高谦  已经完成
 
 底下注释非常详细，因为我健忘，怕给老师讲的时候自己忘了当初自己咋想的了
 """
-class label(object):
-    def __init__(self,val,right):
-        #指示当前边的值
-        self.value=val
-        #指向下一个状态：转移后的状态。
-        self.right=right
-class Item(object):
-    def __init__(self,val,sets):
-        #指示当前点的位置：
-        self.index=0
-        #指示状态中的产生式中的左边的非终结符。
-        self.left=val
-        #list[str] 一个字符串的列表：
-        self.right=sets
-        self.maxindex=len(self.right)
-    #修改当前点的位置的函数，新建状态的时候会用到：
-    def setIndex(self,ind):
-        self.index=ind
-class Status(object):
-    id=0
-    def __init__(self):
-        #line
-        self.line=[]
-        #Item
-        self.productionSet=[]
-        self.static_id=0
-    def initid(self):
-        self.static_id=Status.id
-        Status.id += 1
-    def addline(self,singleline):
-        self.line.append(singleline)
-    def addProduction(self,production):
-        self.productionSet.append(production)
-    def setStatusid(self,ids):
-        self.static_id=ids
-class Line(object):
-    def __init__(self,tranval,next):
-        self.next=next
-        self.tranval=tranval
-def isTerminal(k):
-    if (k[0] >= 'a' and k[0] <= 'z') or \
-            (k[0] >= '0' and k[0] <= '9') or \
-            k[0] == 'ε' or \
-            k[0] == '(' or \
-            k[0] == ')' or \
-            k[0] == '+' or \
-            k[0] == '-' or \
-            k[0] == '*' or \
-            k[0] == '/':
-        return True
-    return False
+from container import *
+from struct import *
+from public import *
 def printGramma(gramma):
     for i in gramma:
         print((i.value,i.right))
@@ -111,13 +63,17 @@ def PrintProductionSet(productionset):
         for elem in productionset[i][1]:
             res+=elem+" "
         print(res)
-def checkRepeat(resultSet,item,gramma,nset,tset):
+def checkRepeat(resultSet,productionSet,pro_index,gramma,nset,tset):
     newset = []
     newtemp = []
-    newitem=Item(item.left,item.right)
-    newitem.setIndex(item.index+1)
-    newset.append(newitem)
-    newtemp.append((newitem.left, newitem.right, newitem.index))
+    #这里有一个坑，注意，产生式可能包括相同的符号，初始的状态可能不是只有一条产生式：
+    currentlabel=productionSet[pro_index].right[productionSet[pro_index].index]
+    for item in productionSet:
+        if item.right[item.index]==currentlabel:
+            newitem=Item(item.left,item.right)
+            newitem.setIndex(item.index+1)
+            newset.append(newitem)
+            newtemp.append((newitem.left, newitem.right, newitem.index))
     for i in newset:
         if i.index==i.maxindex:
             continue
@@ -158,7 +114,8 @@ def getNextStatus(status,tset,nset,gramma,resultSet):
     i=0
     plength=len(status.productionSet)
     while i<plength:
-        isrepeat,newset,nextstatus=checkRepeat(resultSet,status.productionSet[i],gramma,nset,tset)
+        '''status.productionSet[i]'''
+        isrepeat,newset,nextstatus=checkRepeat(resultSet,status.productionSet,i,gramma,nset,tset)
         #如果不是重复的话：
         if not isrepeat:
             #创建新的状态：
@@ -256,13 +213,118 @@ def getTable(resultSet,tset,nset,productionSet):
                         break
         i+=1
     PrintTable(table)
+    return table
+def Parsing(resultset,tset,nset,productionset,table):
+    start=productionset[0][0]
+    while True:
+        parStack = stack()
+        inputstring = queue()
+        cin=input("请输入要进行分析的字符串: \n")
+        if cin=='exit':
+            break
+        cin=cin.split()
+        for i in cin:
+            inputstring.push(i)
+        inputstring.push("$")
+        parStack.push("$")
+        parStack.push("s0")
+        isaccept=True
+        #开始进行分析:
+        # print(start)
+        print("开始分析：")
+        print("-----------------------------")
+        while parStack.peek()!=start:
+            #获得当前状态的标号：
+            row=int(parStack.peek()[1:])
+            currentlabel=inputstring.front()
+            print("分析栈：",end="")
+            for i in parStack.datalist:
+                print(i,end=" ")
+            print()
+            print("输入队列：",end="")
+            for i in inputstring.datalist:
+                print(i,end=" ")
+            print()
+            print("动作：",end="")
+            if resultset[row].isendStatus():
+                #这里要进行规约操作：
+                print("reduce: ",end="")
+                currentpro=resultset[row].productionSet[0]
+                print(currentpro.left,end="->")
+                for item in currentpro.right:
+                    print(item,end=" ")
+                print()
+                loop=len(currentpro.right)*2
+                for l in range(loop):
+                    parStack.pop()
+                #要新加入分析栈中的非终结符号：
+                currentelem=currentpro.left
+                #该非终结符号所在分析表的列数：
+                if currentelem==start:
+                    #可以判断为接受
+                    break
+                column=table[0].index(currentelem)
+                #获取当前分析栈顶的状态标号：
+                currentrow=int(parStack.peek()[1:])
+                # print(currentrow)
+                # print(column)
+                nextstatus=table[currentrow+1][column]
+                parStack.push(currentelem)
+                parStack.push(nextstatus)
+
+                # 6 A  ['d'] 1
+                # print(resultset[row].static_id)  # 6
+                # print(resultset[row].productionSet[0].left)
+                # print(resultset[row].productionSet[0].right)
+                # print(resultset[row].productionSet[0].index)
+                print("-----------------------------------")
+                # return True
+            else:
+                #这里要进行shift的操作：
+                if currentlabel not in tset:
+                    # print(currentlabel)
+                    # print(tset)
+                    print("没有在终结符的集合中，无法识别的字符：")
+                    isaccept=False
+                    break
+                else:
+                    column =table[0].index(currentlabel)
+                    op=table[row+1][column]
+                    if op !="":
+                        op=op[1:]
+                        parStack.push(currentlabel)
+                        parStack.push("s"+op)
+                        inputstring.pop()
+                        print("shift")
+                        print("-----------------------------------")
+                    else:
+                        print("op 异常:")
+                        # print((row,column))
+                        # print(currentlabel)
+                        isaccept=False
+                        break
+        if isaccept:
+            print("-----------------------------------")
+            print("分析栈：", end="")
+            for i in parStack.datalist:
+                print(i, end=" ")
+            print()
+            print("输入队列：", end="")
+            for i in inputstring.datalist:
+                print(i, end=" ")
+            print()
+            print("动作：接受")
+            print("-----------------------------------")
+        else:
+            print("不可以接受！")
 def main():
     gramma,start=cin()
     productionSet=getProductionSet(gramma)
     tset,nset=getSet(gramma)
     resultSet, start =getDFA(productionSet,tset,nset,gramma)
     PrintProductionSet(productionSet)
-    getTable(resultSet,tset,nset,productionSet)
+    table=getTable(resultSet,tset,nset,productionSet)
+    Parsing(resultSet,tset,nset,productionSet,table)
 if __name__ == '__main__':
     main()
 
@@ -277,4 +339,9 @@ if __name__ == '__main__':
 # A->a A b|c
 # B->a B d|d
 # exit
+
+# S->a A
+# A->c A|d
+# exit
+
 
