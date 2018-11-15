@@ -1,23 +1,25 @@
-def cin():
-    while True:
-        r=input()
-        if r=='exit':
-            break
-        else:
-            print(r)
-def secondinput():
-    while True:
-        r=input()
-        if r=='exit':
-            break
-        else:
-            print(r)
+from LL1 import cin
+from LL1 import getFirst
+from LL1 import getFollow
+from LL1 import getSet
+from LR0 import *
+from public import *
+from struct import *
 def main():
-    cin()
-    print("第一次输入结束：")
-    secondinput()
-    print("第二次输入结束：")
+    gramma,start=cin()
+    tset,nset=getSet(gramma)
+    First=getFirst(gramma,tset,nset)
+    Follow=getFollow(gramma,tset,nset,First,start)
+    productionSet=getProductionSet(gramma)
+    PrintProductionSet(productionSet)
+    print(tset)
+    print(nset)
+
+    # resultSet,start= getDFA(productionSet, tset, nset, gramma)
 if __name__ == '__main__':
     main()
 
-#
+# E->E + T|T
+# T->T * F|F
+# F->( E )|id
+# exit

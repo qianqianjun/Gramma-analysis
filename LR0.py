@@ -328,6 +328,11 @@ def main():
 if __name__ == '__main__':
     main()
 
+# S->a A
+# A->c A|d
+# exit
+
+
 
 # S->a A|b B
 # A->c A|d
@@ -340,8 +345,6 @@ if __name__ == '__main__':
 # B->a B d|d
 # exit
 
-# S->a A
-# A->c A|d
-# exit
+
 
 
