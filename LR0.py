@@ -214,7 +214,7 @@ def getTable(resultSet,tset,nset,productionSet):
                         table[i+1][len(tset)+1]="ACC"
                     else:
                         col=1
-                        while col <=len(tset):
+                        while col <=len(tset)+1:
                             table[i+1][col]="r"+str(r)
                             col+=1
                         break
