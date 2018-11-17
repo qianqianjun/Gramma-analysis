@@ -136,7 +136,7 @@ def getNextStatus(status,tset,nset,gramma,resultSet):
             else:
             # 如果是一个非终结符号：
             # 创建指向自己的一个边：
-                L1=Line(status.productionSet[i].right[status.productionSet[i].index],status)
+                L1=Line(status.productionSet[i].right[status.productionSet[i].index],nextstatus)
                 status.line.append(L1)
         i+=1
 def getDFA(productionset,tset,nset,gramma):
@@ -145,6 +145,13 @@ def getDFA(productionset,tset,nset,gramma):
     #创造开始状态的所有产生式：
     for i in start.productionSet:  #遍历item
         if i.right[i.index] in nset:
+            #修复了产生式不断添加到productionSet 的bug，防止电脑蓝屏：
+            godown=True
+            for temp in start.productionSet:
+                if temp.left==i.right[i.index]:
+                    godown=False
+            if not godown:
+                continue
             for row in gramma:
                 if row.value==i.right[i.index]:
                     for k in row.right:
@@ -233,7 +240,7 @@ def Parsing(resultset,tset,nset,productionset,table):
         # print(start)
         print("开始分析：")
         print("-----------------------------")
-        while parStack.peek()!=start:
+        while parStack.peek()!=start and parStack.size()>1:
             #获得当前状态的标号：
             row=int(parStack.peek()[1:])
             currentlabel=inputstring.front()
@@ -260,30 +267,22 @@ def Parsing(resultset,tset,nset,productionset,table):
                 #要新加入分析栈中的非终结符号：
                 currentelem=currentpro.left
                 #该非终结符号所在分析表的列数：
-                if currentelem==start:
+                #修复了输入队列子串是可以接受的串导致后面无法进行分析的错误
+                if currentelem==start and inputstring.size()==1:
                     #可以判断为接受
                     break
+                if currentelem==start:
+                    continue
                 column=table[0].index(currentelem)
                 #获取当前分析栈顶的状态标号：
                 currentrow=int(parStack.peek()[1:])
-                # print(currentrow)
-                # print(column)
                 nextstatus=table[currentrow+1][column]
                 parStack.push(currentelem)
                 parStack.push(nextstatus)
-
-                # 6 A  ['d'] 1
-                # print(resultset[row].static_id)  # 6
-                # print(resultset[row].productionSet[0].left)
-                # print(resultset[row].productionSet[0].right)
-                # print(resultset[row].productionSet[0].index)
                 print("-----------------------------------")
-                # return True
             else:
                 #这里要进行shift的操作：
                 if currentlabel not in tset:
-                    # print(currentlabel)
-                    # print(tset)
                     print("没有在终结符的集合中，无法识别的字符：")
                     isaccept=False
                     break
@@ -299,8 +298,6 @@ def Parsing(resultset,tset,nset,productionset,table):
                         print("-----------------------------------")
                     else:
                         print("op 异常:")
-                        # print((row,column))
-                        # print(currentlabel)
                         isaccept=False
                         break
         if isaccept:

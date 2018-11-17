@@ -44,3 +44,5 @@ class queue(object):
             return True
         else:
             return False
+    def size(self):
+        return len(self.datalist)

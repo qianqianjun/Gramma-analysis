@@ -16,6 +16,16 @@ class Item(object):
     #修改当前点的位置的函数，新建状态的时候会用到：
     def setIndex(self,ind):
         self.index=ind
+    def equals(self,item):
+        if item.left==self.left and item.index==self.index and len(item.right)==len(self.right):
+            length=len(item.right)
+            i=0
+            while i<length:
+                if item.right[i]!=self.right[i]:
+                    return False
+                i+=1
+            return True
+        return False
 class Status(object):
     id=0
     def __init__(self):
