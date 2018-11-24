@@ -37,7 +37,10 @@ class Status(object):
             if i.index==i.maxindex:
                 self.fin_pro.append(i)
             else:
-                self.unfin_pro.append(i)
+                if i.right[0]!="ε":
+                    self.unfin_pro.append(i)
+                else:
+                    self.fin_pro.append(i)
 def contain(arr,elem):
     for i in arr:
         if i.equals(elem):
@@ -106,6 +109,10 @@ def getNextStatus(status,tset,nset,gramma,resultSet):
         if status.productionSet[i].index==status.productionSet[i].maxindex:
             i+=1
             continue
+        #如果当前产生式的右端是一个空串，那就不用进行操作了
+        if status.productionSet[i].right[status.productionSet[i].index]=='ε':
+            i+=1
+            continue
         isrepeat,newset,nextstatus=checkRepeat(resultSet,status.productionSet,i,gramma,nset,tset)
         #如果不是重复的话：
         if not isrepeat:
@@ -144,13 +151,6 @@ def getDFA(productionset,tset,nset,gramma):
     #创造开始状态的所有产生式：
     for i in start.productionSet:  #遍历item
         if i.right[i.index] in nset:
-            #修复了产生式不断添加到productionSet 的bug，防止电脑蓝屏：
-            # godown=True
-            # for temp in start.productionSet:
-            #     if temp.left==i.right[i.index]:
-            #         godown=False
-            # if not godown:
-            #     continue
             for row in gramma:
                 if row.value==i.right[i.index]:
                     for k in row.right:
@@ -177,6 +177,8 @@ def getTable(resultSet,tset,nset,productionSet,follow):
     #初始化表头：
     head=["status"]
     for i in tset:
+        if i=='ε':
+            continue
         head.append(i)
     head.append("$")
     for i in nset[1:]:
@@ -234,10 +236,10 @@ def getTable(resultSet,tset,nset,productionSet,follow):
                     for r in productionSet:
                         if productionSet[r][0]==fin.left and productionSet[r][1]==fin.right:
                             if r == 0:
-                                table[i + 1][len(tset) + 1] = "ACC"
+                                table[i + 1][len(tset)] = "ACC"
                             else:
                                 col=1
-                                while col<=len(tset)+1:
+                                while col<=len(tset):
                                     if head[col] in follow[fin.left]:
                                         table[i+1][col]="r"+str(r)
                                     col+=1
@@ -248,24 +250,51 @@ def getTable(resultSet,tset,nset,productionSet,follow):
                     nextid = j.next.static_id
                     index = head.index(val)
                     table[i + 1][index] = "s" + str(nextid)
-        #如果一个状态只包含一个产生式，那么这个产生式一定是一个完成产生式，只能进行规约操作
-        #根据Follow集合填表，不再和LR0算法一样，暴力全填上。
+        #如果一个状态只包含一个产生式
         else:
-            for r in productionSet:
-                #找到对应的状态的id ，r就是id ，这里要注意的是当r=0的时候是开始状态，应该把ACC填到这一行的
-                #  $ 符号对应的位置上。
-                # print(productionSet[r])
-                if productionSet[r][0]==firstPro.left and productionSet[r][1]==firstPro.right:
-                    if r==0:
-                        table[i+1][len(tset)+1]="ACC"
-                    else:
-                        col=1
-                        while col <=len(tset)+1:
-                            #在当前产生式的左端的follow集合中填入这个规约条件：
-                            if head[col] in follow[firstPro.left]:
-                                table[i+1][col]="r"+str(r)
-                            col+=1
-                    break
+            if firstPro.index!=firstPro.maxindex:
+                #如果产生式的右端不是空的，那么就说明要进行移进的操作了。
+                if firstPro.right[0]!="ε":
+                    for j in currentstatus.line:
+                        val=j.tranval
+                        nextid=j.next.static_id
+                        index=head.index(val)
+                        table[i+1][index]="s"+str(nextid)
+                #否则要进行的操作是进行规约操作:
+                else:
+                    for r in productionSet:
+                        # 找到对应的状态的id ，r就是id ，这里要注意的是当r=0的时候是开始状态，应该把ACC填到这一行的
+                        #  $ 符号对应的位置上。
+                        # print(productionSet[r])
+                        if productionSet[r][0] == firstPro.left and productionSet[r][1] == firstPro.right:
+                            if r == 0:
+                                table[i + 1][len(tset)] = "ACC"
+                            else:
+                                col = 1
+                                while col <= len(tset):
+                                    # 在当前产生式的左端的follow集合中填入这个规约条件：
+                                    if head[col] in follow[firstPro.left]:
+                                        table[i + 1][col] = "r" + str(r)
+                                    col += 1
+                            break
+            # 这个产生式一定是一个完成产生式，只能进行规约操作
+            # 根据Follow集合填表，不再和LR0算法一样，暴力全填上。
+            else:
+                for r in productionSet:
+                    #找到对应的状态的id ，r就是id ，这里要注意的是当r=0的时候是开始状态，应该把ACC填到这一行的
+                    #  $ 符号对应的位置上。
+                    # print(productionSet[r])
+                    if productionSet[r][0]==firstPro.left and productionSet[r][1]==firstPro.right:
+                        if r==0:
+                            table[i+1][len(tset)]="ACC"
+                        else:
+                            col=1
+                            while col <=len(tset):
+                                #在当前产生式的左端的follow集合中填入这个规约条件：
+                                if head[col] in follow[firstPro.left]:
+                                    table[i+1][col]="r"+str(r)
+                                col+=1
+                        break
         i+=1
     PrintTable(table)
     return table
@@ -322,9 +351,10 @@ def Parsing(resultset,tset,nset,productionset,table):
                     for item in productionset[reduceindex][1]:
                         print(item,end="")
                     print()
-                    loop=len(productionset[reduceindex][1])*2
-                    for l in range(loop):
-                        parStack.pop()
+                    if productionset[reduceindex][1][0]!="ε":
+                        loop=len(productionset[reduceindex][1])*2
+                        for l in range(loop):
+                            parStack.pop()
                     # 要新加入分析栈中的非终结符号：
                     currentelem = productionset[reduceindex][0]
                     # 该非终结符号所在分析表的列数：
@@ -362,6 +392,8 @@ def Parsing(resultset,tset,nset,productionset,table):
 def main():
     gramma,start=cin()
     tset,nset=getSet(gramma)
+    if "ε" not in tset:
+        tset.append("ε")
     First=getFirst(gramma,tset,nset)
     Follow=getFollow(gramma,tset,nset,First,start)
     productionSet=getProductionSet(gramma)
@@ -376,3 +408,11 @@ if __name__ == '__main__':
 # T->T * F|F
 # F->( E )|id
 # exit
+
+# E->E + n|n
+# exit
+
+
+# S->( S ) S|ε
+# exit
+
