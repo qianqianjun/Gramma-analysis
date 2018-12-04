@@ -7,6 +7,7 @@ def isTerminal(k):
             k[0] == '+' or \
             k[0] == '-' or \
             k[0] == '*' or \
-            k[0] == '/':
+            k[0] == '/' or \
+            k[0] == '=':
         return True
     return False
