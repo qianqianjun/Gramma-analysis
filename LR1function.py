@@ -6,7 +6,6 @@ from LL1 import getFirst
 from LL1 import printGramma
 from LL1 import PrintTable
 from SLR import Parsing
-import time
 class Line(object):
     def __init__(self,tranval,next):
         self.tranval=tranval
@@ -35,7 +34,7 @@ class Status(object):
         Status.staticnum+=1
     def add(self,production):
         self.productionSet.append(production)
-        self.infotemp.append((production.left,production.right,production.index,production.maxindex,production.lookahead))
+        self.infotemp.append((production.left,production.right,production.index,production.maxindex,sorted(production.lookahead)))
 
     def same(self,other)->bool:
         #如果两个状态的产生式集合的长度都不一样的话，可以直接判定两个状态不一样。
@@ -85,7 +84,8 @@ class Status(object):
                 add=True
                 #检查当前的集合中是否已经有了这个产生式：
                 for j in self.productionSet:
-                    if j.index==0 and j.left==i.right[i.index]:
+                    look=self.getLookAhead(i,first)
+                    if j.index==0 and j.left==i.right[i.index] and set(look).issubset(set(j.lookahead)):
                         add=False
                         break
                 if add:
@@ -119,8 +119,6 @@ def out_getLookahead(pro,first):
     else:
         return getStringFirst(pro, first)
 def getNextStatus(resultSet,status,proSet,first,nset):
-    time.sleep(2)
-    Print(resultSet)
     Set=status.productionSet
     #遍历所有产生式
     try:
@@ -137,6 +135,8 @@ def getNextStatus(resultSet,status,proSet,first,nset):
             #查找当前集合中是不是还有其他产生式经过一个相同的符号会转移
             for j in range(len(Set)):
                 if i==j:
+                    continue
+                if Set[j].index==Set[j].maxindex:
                     continue
                 if Set[j].right[Set[j].index]!=tranval:
                     continue
