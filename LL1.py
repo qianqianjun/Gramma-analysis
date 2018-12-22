@@ -4,6 +4,7 @@ write by 高谦  已完成
 from container import *
 from public import *
 from struct import *
+import time
 def cin():
     print("请输入文法，例如：A->a|A b,输入exit结束输入(注意,不同的符号之间要有空格:")
     gramma=[]
@@ -270,7 +271,7 @@ def getTable(follow,first,gramma,nset,tset):
             flag=False
             # 遍历所有的产生式
             while content<length:
-                #如果产生式的右边和这一行的表头是一样的：
+                #如果产生式的左边和这一行的表头是一样的：
                 if productionSet[content][0]==i:
                     #如果产生式右边第一个就是要找的终结符元素：
                     if productionSet[content][1][0]==elem:
@@ -279,20 +280,34 @@ def getTable(follow,first,gramma,nset,tset):
                             flag=True
                             for fo in follow[i]:
                                 #这里应该加一个是否不是LL1文法的条件
-                                newrow[head.index(fo)]=content
+                                if fo != "ε":
+                                    if newrow[head.index(fo)] != "":
+                                        newrow[head.index(fo)] += "/" + str(content)
+                                        PrintProductionSet(productionSet)
+                                        PrintTable(table)
+                                        exit("这不是一个LL1文法！")
+                                    else:
+                                        newrow[head.index(fo)] = str(content)
+
                         #不是空串的话，说明一下找到了，并把产生式编号填进表格：
                         else:
                             #这里应该判断一下是是不是LL1文法
-                            newrow[head.index(elem)]=content
+                            if newrow[head.index(elem)]!="":
+                                newrow[head.index(elem)] += "/"+str(content)
+                                PrintTable(table)
+                                PrintProductionSet(productionSet)
+                                exit("这不是一个LL1文法！")
+                            newrow[head.index(elem)]=str(content)
                             flag=True
                             break
                 content+=1
-            #如果没有找到匹配的左边是终结符的产生式。
+            #如果没有找到匹配的右边是终结符的产生式。
             if not flag:
                 content=0
                 while content<length:
-                    if productionSet[content][0]==i and productionSet[content][0] in nset:
-                        newrow[head.index(elem)]=content
+                    if productionSet[content][0]==i and \
+                            productionSet[content][0] in nset and elem!="ε":
+                        newrow[head.index(elem)]=str(content)
                         break
                     content+=1
     return (table,productionSet)
@@ -409,4 +424,49 @@ if __name__ == '__main__':
 # exit
 
 # S->( S ) S|ε
+# exit
+
+
+# from dalao
+"""
+5
+# E->T E'
+# E'->+ T E'|ε
+# T->F T'
+# T'->* F T'|ε
+# F->( E )|i
+# exit
+
+"""
+
+#7.3
+# S->A a|b A c|B c|b B a
+# A->d
+# B->d
+
+# 7.2
+# S->A a|b A c|d c|b d a
+# A->d
+# exit
+
+# 7.1
+# S->E
+# E->T|T + E
+# T->ε
+# exit
+
+# 6.3
+# S->A
+# A->A b|b B a
+# B->a A c|a|a A b
+# exit
+
+# 6.2
+# S->A a A b|B b B a
+# A->ε
+# B->ε
+
+# 6.1
+# S->S + a T|a T|+ a T
+# T->+ a T|+ a
 # exit

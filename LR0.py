@@ -6,6 +6,7 @@ write by 高谦  已经完成
 from container import *
 from struct import *
 from public import *
+import time
 def printGramma(gramma):
     for i in gramma:
         print((i.value,i.right))
@@ -128,18 +129,21 @@ def getNextStatus(status,tset,nset,gramma,resultSet):
             resultSet.append(newstatus)
             #创建指向新状态的边：
             L1=Line(status.productionSet[i].right[status.productionSet[i].index],newstatus)
-            status.line.append(L1)
+            # status.line.append(L1)
+            status.addline(L1)
             getNextStatus(newstatus,tset,nset,gramma,resultSet)
         else:
             #如果是一个终结符号：
             if status.productionSet[i].right[status.productionSet[i].index] in tset:
                 L1=Line(status.productionSet[i].right[status.productionSet[i].index],nextstatus)
-                status.line.append(L1)
+                # status.line.append(L1)
+                status.addline(L1)
             else:
             # 如果是一个非终结符号：
             # 创建指向自己的一个边：
                 L1=Line(status.productionSet[i].right[status.productionSet[i].index],nextstatus)
-                status.line.append(L1)
+                # status.line.append(L1)
+                status.addline(L1)
         i+=1
 def getDFA(productionset,tset,nset,gramma):
     start=Status()
@@ -183,80 +187,66 @@ def PrintTable(table):
             print("{:^10s}|".format(str(j)),end="")
         print()
         print(("-"*width+"+")*len(table[0]))
-def getReduce(productionSet,firstPro,tset,table,i):
-    for r in productionSet:
-        if productionSet[r][0]==firstPro.left and productionSet[r][1]==firstPro.right:
-            if r==0:
-                table[i+1][len(tset)]="ACC"
-            else:
-                col=1
-                while col <=len(tset):
-                    if table[i+1][col]!="":
-                        raise RuntimeError("存在冲突，不能进行分析表生成")
-                    table[i+1][col]="r"+str(r)
-                    col+=1
-                break
-def getshift(currentstatus,head,table,i):
-    for j in currentstatus.line:
-        val=j.tranval
-        nextid=j.next.static_id
-        if val!="ε":
-            index=head.index(val)
-            table[i+1][index]="s"+str(nextid)
+def getreduce2(productionSet,table,row,pro):
+    if row==2:
+        if table[row][table[0].index("$")]!="":
+            time.sleep(1)
+            PrintTable(table)
+            exit("存在冲突")
+        else:
+            table[row][table[0].index("$")]="ACC"
+        return
+    index=-1
+    for j in range(len(productionSet)):
+        if productionSet[j][0]==pro.left and productionSet[j][1]==pro.right:
+            index=j
+    for i in range(1,len(table[row])):
+        if table[row][i]!="":
+            table[row][i]=str(table[row][i])+"/reduce"+str(index)
+            PrintTable(table)
+            time.sleep(1)
+            exit("存在冲突，程序停止运行！")
+    for i in range(1,table[0].index("$")+1):
+        table[row][i]="r"+str(index)
+def getshift2(status,table,row,index):
+    val=status.line[index].tranval
+    nextid=status.line[index].next.static_id
+    if table[row][table[0].index(val)]!="":
+        table[row][table[0].index(val)]=str(table[row][table[0].index(val)])+"/s"+str(nextid)
+        PrintTable(table)
+        time.sleep(1)
+        exit("存在冲突，程序停止！")
+    else:
+        table[row][table[0].index(val)]="s"+str(nextid)
 def getTable(resultSet,tset,nset,productionSet):
-    head=["status"]
+    head = ["status"]
     for i in tset:
-        if i=='ε':
+        if i == 'ε':
             continue
         head.append(i)
     head.append("$")
     for i in nset[1:]:
         head.append(i)
-    table=[]
+    table = []
     table.append(head)
     for i in resultSet:
-        newrow=[i.static_id]
+        newrow = [i.static_id]
         for j in head[1:]:
             newrow.append("")
         table.append(newrow)
-    i=0
-    length=len(resultSet)
-    while i<length:
-        currentstatus=resultSet[i]
-        Set=currentstatus.productionSet
-        firstPro=currentstatus.productionSet[0]
-        HaveNull=False
-        lefttemp=""
-        for pro in Set:
-            if pro.right[0]=="ε":
-                HaveNull=True
-                lefttemp=pro.left
-            elif pro.index==pro.maxindex:
-                getReduce(productionSet,pro,tset,table,i)
-            else:
-                getshift(currentstatus,head,table,i)
-        # 这是一条完成式，就要使用相应的产生式进行规约
-        if HaveNull:
-            for r in productionSet:
-                if productionSet[r][0] == lefttemp and productionSet[r][1][0] =="ε" :
-                    if r == 0:
-                        table[i + 1][len(tset)] = "ACC"
-                        break
-                    else:
-                        col = 1
-                        while col <= len(tset):
-                            if table[i + 1][col] != "":
-                                if table[i + 1][col][0] == "r":
-                                    raise RuntimeError("存在规约的冲突，不能生成分析表：")
-                                col += 1
-                                continue
-                            table[i + 1][col] = "r" + str(r)
-                            col += 1
-                        break
-        i+=1
+    # 遍历所有的状态
+    row=1
+    for status in resultSet:
+        for index in range(len(status.line)):
+            getshift2(status, table, row, index)
+        for pro in status.productionSet:
+            if pro.index==pro.maxindex or pro.right[0]=="ε":
+                getreduce2(productionSet,table,row,pro)
+        row+=1
     PrintTable(table)
     return table
-def Parsing(resultset,tset,nset,productionset,table):
+
+def Parsing(productionset,table):
     start=productionset[0][0]
     while True:
         parStack = stack()
@@ -347,6 +337,7 @@ def Parsing(resultset,tset,nset,productionset,table):
             print("-----------------------------------")
         else:
             print("不可以接受！")
+
 def main():
     gramma,start=cin()
     productionSet=getProductionSet(gramma)
@@ -356,7 +347,7 @@ def main():
     resultSet, start =getDFA(productionSet,tset,nset,gramma)
     PrintProductionSet(productionSet)
     table=getTable(resultSet,tset,nset,productionSet)
-    Parsing(resultSet,tset,nset,productionSet,table)
+    Parsing(productionSet,table)
 if __name__ == '__main__':
     main()
 

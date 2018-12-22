@@ -38,7 +38,11 @@ class Status(object):
         self.static_id=Status.id
         Status.id += 1
     def addline(self,singleline):
+        for l in self.line:
+            if l.tranval==singleline.tranval and l.next.static_id==singleline.next.static_id:
+                return False
         self.line.append(singleline)
+        return True
     def addProduction(self,production):
         self.productionSet.append(production)
     def setStatusid(self,ids):

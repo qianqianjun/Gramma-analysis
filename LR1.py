@@ -35,3 +35,36 @@ if __name__ == '__main__':
 # L->* R|id
 # R->L
 # exit
+
+
+#7.3
+# S->A a|b A c|B c|b B a
+# A->d
+# B->d
+
+# 7.2
+# S->A a|b A c|d c|b d a
+# A->d
+# exit
+
+# 7.1
+# S->E
+# E->T|T + E
+# T->ε
+# exit
+
+# 6.3
+# S->A
+# A->A b|b B a
+# B->a A c|a|a A b
+# exit
+
+# 6.2
+# S->A a A b|B b B a
+# A->ε
+# B->ε
+
+# 6.1
+# S->S + a T|a T|+ a T
+# T->+ a T|+ a
+# exit
