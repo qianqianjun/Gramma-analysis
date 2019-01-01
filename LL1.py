@@ -299,7 +299,8 @@ def getTable(follow,first,gramma,nset,tset):
                                 exit("这不是一个LL1文法！")
                             newrow[head.index(elem)]=str(content)
                             flag=True
-                            break
+                            #如果没有这个break，默认使用多个候选产生式的第一个产生式：
+                            #break
                 content+=1
             #如果没有找到匹配的右边是终结符的产生式。
             if not flag:
@@ -470,3 +471,9 @@ if __name__ == '__main__':
 # S->S + a T|a T|+ a T
 # T->+ a T|+ a
 # exit
+
+
+
+
+
+
